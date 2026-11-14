@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Orion | Enterprise Knowledge Assistant</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #f3f6fa;
+        color: #17263b;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; min-width: 320px; }
+      header {
+        align-items: center;
+        background: #102b46;
+        color: #fff;
+        display: flex;
+        justify-content: space-between;
+        padding: 18px max(24px, calc((100vw - 1120px) / 2));
+      }
+      .brand { align-items: center; display: flex; gap: 12px; }
+      .mark {
+        align-items: center;
+        background: #73dbc3;
+        border-radius: 10px;
+        color: #102b46;
+        display: inline-flex;
+        font-size: 18px;
+        font-weight: 800;
+        height: 38px;
+        justify-content: center;
+        width: 38px;
+      }
+      h1 { font-size: 18px; margin: 0; }
+      header p { color: #bed0df; font-size: 12px; margin: 3px 0 0; }
+      main { margin: 34px auto; max-width: 1120px; padding: 0 24px; }
+      .intro { margin-bottom: 24px; }
+      .eyebrow { color: #54708a; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+      h2 { font-size: 28px; letter-spacing: -.03em; margin: 7px 0; }
+      .intro p { color: #63758a; line-height: 1.55; margin: 0; max-width: 700px; }
+      .workspace { display: grid; gap: 20px; grid-template-columns: minmax(0, 1.55fr) minmax(270px, .85fr); }
+      .panel { background: #fff; border: 1px solid #e0e7ee; border-radius: 14px; box-shadow: 0 8px 28px #18334a0a; }
+      .panel-head { align-items: center; border-bottom: 1px solid #e8edf2; display: flex; justify-content: space-between; padding: 17px 20px; }
+      .panel-head h3 { font-size: 15px; margin: 0; }
+      .panel-body { padding: 20px; }
+      label { color: #3c5267; display: block; font-size: 12px; font-weight: 700; margin-bottom: 7px; }
+      select, textarea, input {
+        background: #fff;
+        border: 1px solid #cdd8e2;
+        border-radius: 8px;
+        color: #17263b;
+        font: inherit;
+        padding: 10px 12px;
+        width: 100%;
+      }
+      select:focus, textarea:focus, input:focus, button:focus-visible { outline: 3px solid #73dbc366; outline-offset: 2px; }
+      textarea { min-height: 132px; resize: vertical; }
+      .field { margin-bottom: 16px; }
+      .form-row { align-items: end; display: grid; gap: 12px; grid-template-columns: 1fr auto; }
+      button { background: #136b70; border: 0; border-radius: 8px; color: white; cursor: pointer; font: inherit; font-weight: 700; padding: 11px 16px; }
+      button:hover { background: #0e575c; }
+      button:disabled { cursor: wait; opacity: .65; }
+      .answer { background: #f4f8fa; border-radius: 9px; line-height: 1.6; margin-top: 18px; min-height: 56px; padding: 14px; white-space: pre-wrap; }
+      .status { color: #5a6f83; font-size: 12px; min-height: 18px; }
+      .doc-list { display: grid; gap: 10px; }
+      .doc {
+        background: #fafbfd;
+        border: 1px solid #e7edf2;
+        border-radius: 9px;
+        padding: 12px;
+      }
+      .doc strong { display: block; font-size: 13px; margin-bottom: 5px; }
+      .doc span { color: #6b7f93; font-size: 11px; text-transform: capitalize; }
+      .small { color: #73869a; font-size: 12px; line-height: 1.5; }
+      @media (max-width: 760px) {
+        .workspace { grid-template-columns: 1fr; }
+        header { padding-left: 20px; padding-right: 20px; }
+        main { margin-top: 26px; padding: 0 16px; }
+        h2 { font-size: 24px; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="brand">
+        <span class="mark" aria-hidden="true">O</span>
+        <div>
+          <h1>Orion</h1>
+          <p>Enterprise Knowledge Assistant</p>
+        </div>
+      </div>
+      <span class="small" style="color:#bed0df">Local workspace</span>
+    </header>
+    <main>
+      <section class="intro">
+        <div class="eyebrow">Knowledge workspace</div>
+        <h2>Find the context you need.</h2>
+        <p>Ask a question about internal guidance, project notes, or synthetic customer records. Orion searches the local knowledge index and summarizes relevant information.</p>
+      </section>
+      <div class="workspace">
+        <section class="panel" aria-labelledby="assistant-heading">
+          <div class="panel-head">
+            <h3 id="assistant-heading">Assistant</h3>
+            <div style="width:190px">
+              <label for="user-select" style="margin:0 0 4px">Signed in as</label>
+              <select id="user-select" aria-label="Synthetic user">
+                <option value="alice@example.test">Alice · Employee</option>
+                <option value="bob@example.test">Bob · Employee</option>
+                <option value="manager@example.test">Manager</option>
+                <option value="admin@example.test">Administrator</option>
+              </select>
+            </div>
+          </div>
+          <div class="panel-body">
+            <form id="chat-form">
+              <div class="field">
+                <label for="message">What would you like to know?</label>
+                <textarea id="message" required maxlength="4000" placeholder="Example: What does the travel policy say?"></textarea>
+              </div>
+              <div class="form-row">
+                <div id="status" class="status" role="status" aria-live="polite">Connecting to the local assistant…</div>
+                <button id="ask-button" type="submit">Ask Orion</button>
+              </div>
+            </form>
+            <div id="answer" class="answer" aria-live="polite">Your response will appear here.</div>
+          </div>
+        </section>
+        <aside class="panel" aria-labelledby="documents-heading">
+          <div class="panel-head">
+            <h3 id="documents-heading">Available documents</h3>
+          </div>
+          <div class="panel-body">
+            <p class="small" style="margin-top:0">Documents available to the selected user.</p>
+            <div id="documents" class="doc-list"></div>
+          </div>
+        </aside>
+      </div>
+    </main>
+    <script>
+      const userSelect = document.querySelector("#user-select");
+      const chatForm = document.querySelector("#chat-form");
+      const askButton = document.querySelector("#ask-button");
+      const answer = document.querySelector("#answer");
+      const status = document.querySelector("#status");
+      const documents = document.querySelector("#documents");
+      let accessToken = "";
+
+      async function authenticateAndLoad() {
+        status.textContent = "Connecting to the local assistant…";
+        const tokenResponse = await fetch("/api/token", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: userSelect.value })
+        });
+        if (!tokenResponse.ok) throw new Error("Unable to connect.");
+        accessToken = (await tokenResponse.json()).access_token;
+        const response = await fetch("/api/documents", {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        });
+        if (!response.ok) throw new Error("Unable to load documents.");
+        const items = await response.json();
+        documents.replaceChildren();
+        for (const item of items) {
+          const card = document.createElement("div");
+          card.className = "doc";
+          const title = document.createElement("strong");
+          title.textContent = item.title;
+          const detail = document.createElement("span");
+          detail.textContent = item.classification;
+          card.append(title, detail);
+          documents.append(card);
+        }
+        status.textContent = `Connected · ${items.length} documents`;
+      }
+
+      userSelect.addEventListener("change", () => {
+        authenticateAndLoad().catch((error) => { status.textContent = error.message; });
+      });
+
+      chatForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        askButton.disabled = true;
+        status.textContent = "Searching the local knowledge index…";
+        answer.textContent = "";
+        try {
+          if (!accessToken) await authenticateAndLoad();
+          const response = await fetch("/api/chat", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accessToken}`
+            },
+            body: JSON.stringify({ message: document.querySelector("#message").value })
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.detail || "The request could not be completed.");
+          answer.textContent = result.answer;
+          status.textContent = "Response ready";
+        } catch (error) {
+          answer.textContent = error.message;
+          status.textContent = "Request could not be completed";
+        } finally {
+          askButton.disabled = false;
+        }
+      });
+
+      authenticateAndLoad().catch((error) => { status.textContent = error.message; });
+    </script>
+  </body>
+</html>

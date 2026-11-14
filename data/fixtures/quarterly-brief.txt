@@ -1,0 +1,4 @@
+Orion Local Resource Fixture
+
+This synthetic page describes the Q4 knowledge index refresh. The sample index
+contains policy, Atlas, Prism, and customer records created for local review.

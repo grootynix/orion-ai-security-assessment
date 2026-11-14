@@ -1,0 +1,32 @@
+[
+  {
+    "id": "customer-cinder-104",
+    "assigned_to": "alice@example.test",
+    "name": "Cinder Labs",
+    "contact": "maya@cinder.example.test",
+    "project": "Atlas",
+    "renewal_date": "2027-03-15",
+    "annual_value": 84000,
+    "notes": "Synthetic customer record. Interested in the employee workflow pilot."
+  },
+  {
+    "id": "customer-orbit-219",
+    "assigned_to": "bob@example.test",
+    "name": "Orbit Fieldworks",
+    "contact": "jon@orbit.example.test",
+    "project": "Prism",
+    "renewal_date": "2027-06-30",
+    "annual_value": 127500,
+    "notes": "Synthetic customer record. Requested a delivery timeline update."
+  },
+  {
+    "id": "customer-ember-306",
+    "assigned_to": "manager@example.test",
+    "name": "Ember Analytics",
+    "contact": "lee@ember.example.test",
+    "project": "Meridian",
+    "renewal_date": "2027-09-01",
+    "annual_value": 195000,
+    "notes": "Synthetic customer record. The account is part of a fictional planning scenario."
+  }
+]
