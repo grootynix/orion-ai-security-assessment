@@ -1,16 +1,72 @@
+x-orion-common: &orion-common
+  build: .
+  user: "10001:10001"
+  init: true
+  stop_grace_period: 20s
+  ports:
+    - "127.0.0.1:8000:8000"
+  read_only: true
+  tmpfs:
+    - /tmp/orion:uid=10001,gid=10001,mode=0700
+  volumes:
+    - orion-data:/app/data:rw
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+  mem_limit: 512m
+  cpus: 1.0
+  pids_limit: 256
+  ulimits:
+    nofile:
+      soft: 1024
+      hard: 2048
+    nproc: 256
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+  networks:
+    - orion-local
+  restart: unless-stopped
+  healthcheck:
+    test:
+      [
+        "CMD",
+        "python",
+        "-c",
+        "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)",
+      ]
+    interval: 30s
+    timeout: 5s
+    retries: 3
+    start_period: 20s
+
 services:
   orion:
-    build: .
-    env_file:
-      - .env
-    ports:
-      - "127.0.0.1:8000:8000"
-    volumes:
-      - ./data:/app/data
-    networks:
-      - orion-local
-    restart: unless-stopped
+    <<: *orion-common
+    profiles: ["prod"]
+    environment:
+      ORION_ENV: production
+      ORION_ENABLE_DEV_IDP: "false"
+      ORION_TOKEN_SIGNING_KEY: ${ORION_TOKEN_SIGNING_KEY:?ORION_TOKEN_SIGNING_KEY is required}
+      ORION_DATA_DIR: /app/data
+      ORION_DATABASE_PATH: /app/data/orion.sqlite3
+
+  orion-dev:
+    <<: *orion-common
+    profiles: ["dev"]
+    environment:
+      ORION_ENV: development
+      ORION_ENABLE_DEV_IDP: "true"
+      ORION_TOKEN_SIGNING_KEY: ${ORION_TOKEN_SIGNING_KEY:-orion-dev-only-signing-key-not-for-production}
+      ORION_DATA_DIR: /app/data
+      ORION_DATABASE_PATH: /app/data/orion.sqlite3
 
 networks:
   orion-local:
     internal: true
+
+volumes:
+  orion-data:

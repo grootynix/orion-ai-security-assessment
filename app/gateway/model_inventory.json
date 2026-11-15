@@ -1,0 +1,28 @@
+{
+  "models": [
+    {
+      "model_id": "fake-llm-v1",
+      "provider": "fake",
+      "status": "approved",
+      "license": "internal-test-only",
+      "digest": "local-deterministic",
+      "notes": "Deterministic FakeLLM for local/test use only"
+    },
+    {
+      "model_id": "hosted-unconfigured",
+      "provider": "hosted",
+      "status": "blocked",
+      "license": "n/a",
+      "digest": null,
+      "notes": "Fail-closed stub until configured"
+    },
+    {
+      "model_id": "self-hosted-unconfigured",
+      "provider": "self_hosted",
+      "status": "blocked",
+      "license": "n/a",
+      "digest": null,
+      "notes": "Fail-closed stub until configured"
+    }
+  ]
+}

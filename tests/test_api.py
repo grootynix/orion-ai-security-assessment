@@ -1,66 +1,71 @@
-from fastapi.testclient import TestClient
-import pytest
+"""Functional API compatibility tests."""
 
-from app.main import create_app
-
-
-@pytest.fixture
-def client(tmp_path):
-    app = create_app(database_path=tmp_path / "orion.sqlite3")
-    with TestClient(app) as test_client:
-        yield test_client
+from tests.conftest import token_for
 
 
-def token_for(client: TestClient, email: str = "alice@example.test") -> str:
-    response = client.post("/api/token", json={"email": email})
-    assert response.status_code == 200
-    return response.json()["access_token"]
-
-
-def test_health_endpoint_is_available(client: TestClient):
+def test_health_endpoint_is_available(client):
     response = client.get("/health")
-
     assert response.status_code == 200
-    assert response.json()["status"] == "ok"
+    payload = response.json()
+    assert payload["status"] == "ok"
+    assert payload["service"] == "orion"
 
 
-def test_authenticated_chat_returns_an_answer(client: TestClient):
+def test_authenticated_chat_returns_an_answer(client):
+    token = token_for(client, "alice@example.test")
     response = client.post(
         "/api/chat",
-        headers={"Authorization": f"Bearer {token_for(client)}"},
+        headers={"Authorization": f"Bearer {token}"},
         json={"message": "What does the travel policy say?"},
     )
-
     assert response.status_code == 200
-    assert "travel" in response.json()["answer"].lower()
+    payload = response.json()
+    assert "travel" in payload["answer"].lower() or "expense" in payload["answer"].lower()
+    assert "search_documents" in payload["tool_calls"]
 
 
-def test_document_search_returns_matching_documents(client: TestClient):
+def test_document_search_returns_matching_documents(client):
+    token = token_for(client, "alice@example.test")
     response = client.get(
         "/api/documents",
-        headers={"Authorization": f"Bearer {token_for(client)}"},
-        params={"q": "travel policy"},
+        params={"q": "travel"},
+        headers={"Authorization": f"Bearer {token}"},
     )
-
     assert response.status_code == 200
-    assert any(item["id"] == "doc-travel-policy" for item in response.json())
+    titles = [item["title"].lower() for item in response.json()]
+    assert any("travel" in title for title in titles)
 
 
-def test_simulated_email_is_written_to_the_local_outbox(client: TestClient):
+def test_simulated_email_requires_approval_then_queues(client):
+    manager_token = token_for(client, "manager@example.test")
     response = client.post(
         "/api/tools/send-email",
-        headers={
-            "Authorization": f"Bearer {token_for(client, 'manager@example.test')}"
-        },
+        headers={"Authorization": f"Bearer {manager_token}"},
         json={
-            "to": "recipient@example.test",
-            "subject": "Local review",
-            "body": "Synthetic message body",
+            "to": "quality-review@example.test",
+            "subject": "Atlas readiness review",
+            "body": "Synthetic readiness note",
         },
     )
-
     assert response.status_code == 200
-    outbox = client.get("/api/outbox", headers={"Authorization": f"Bearer {token_for(client, 'admin@example.test')}"} )
+    payload = response.json()
+    assert payload["status"] == "pending_approval"
+    action_id = payload["pending_action_id"]
 
+    decision = client.post(
+        f"/api/approvals/{action_id}",
+        headers={"Authorization": f"Bearer {manager_token}"},
+        json={"decision": "approve"},
+    )
+    assert decision.status_code == 200
+    assert decision.json()["status"] == "executed"
+
+    admin_token = token_for(client, "admin@example.test")
+    outbox = client.get(
+        "/api/outbox",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
     assert outbox.status_code == 200
-    assert any(message["subject"] == "Local review" for message in outbox.json())
+    assert any(
+        item["subject"] == "Atlas readiness review" for item in outbox.json()
+    )

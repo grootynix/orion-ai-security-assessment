@@ -3,5 +3,12 @@
 __pycache__
 *.py[cod]
 .pytest_cache
+.ruff_cache
 .env
 data/orion.sqlite3*
+data/.tmp-reset-test
+docs
+tests
+sbom.spdx.json
+*.md
+!pyproject.toml

@@ -9,3 +9,6 @@ __pycache__/
 data/orion.sqlite3
 data/orion.sqlite3-shm
 data/orion.sqlite3-wal
+data/.tmp-reset-test/
+sbom.spdx.json
+.ruff_cache/

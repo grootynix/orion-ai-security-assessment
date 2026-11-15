@@ -1,57 +1,83 @@
 # Orion Enterprise Knowledge Assistant
 
-## Purpose
-
-Orion is a small internal assistant prototype for answering employee questions using company policies, project documents, and customer records.
+Secure, modular knowledge assistant for internal policies, project documents, and customer records. Orion uses a deterministic FakeLLM by default so local development and security regression testing do not require external model credentials.
 
 ## Architecture overview
 
-The application uses FastAPI for its HTTP API, Pydantic for request validation, and SQLite for the document index, audit events, and message outbox. A deterministic `FakeLLM` selects local tools and produces summaries. The browser interface is served by the application.
+Orion is a modular monolith:
+
+- FastAPI route layer with authentication, rate limiting, and security headers
+- Signed JWT authentication with server-side identity rebinding
+- Centralized deny-by-default authorization
+- Tool registry and execution broker with approval for consequential actions
+- Model gateway wrapping FakeLLM (optional future hosted/self-hosted providers)
+- Versioned prompts and deterministic evaluation gates
+- SQLite persistence for documents, customers, redacted audit events, approvals, and local email outbox
+
+See [docs/architecture.md](docs/architecture.md) and [docs/security-architecture.md](docs/security-architecture.md).
 
 ## Prerequisites
 
 - Python 3.12
-- `make` for the convenience commands
+- `make`
 - Docker Compose v2 (optional)
 
 ## Setup
-
-Create a virtual environment and install the application and test dependencies:
 
 ```sh
 make setup
 ```
 
-The application uses the bundled data and does not need an external service configuration.
+Copy environment defaults:
+
+```sh
+cp .env.example .env
+```
 
 ## Run locally
-
-Start the API and browser interface on `127.0.0.1:8000`:
 
 ```sh
 make run
 ```
 
-Open [http://127.0.0.1:8000](http://127.0.0.1:8000). Use `make reset-data` to restore the local SQLite state to its initial contents.
+Open [http://127.0.0.1:8000](http://127.0.0.1:8000).
+
+Reset the local SQLite database (non-production only, explicit allow required):
+
+```sh
+make reset-data
+```
 
 ## Docker
 
+Production-oriented compose requires a signing key:
+
 ```sh
 cp .env.example .env
+# Set ORION_ENV=production, ORION_ENABLE_DEV_IDP=false,
+# and a strong ORION_TOKEN_SIGNING_KEY in .env
 docker compose up --build
 ```
 
-The service is published on the local machine at `127.0.0.1:8000`. Stop it with `docker compose down`.
+For a local Docker demo with the synthetic DevIdP UI flow, set:
 
-## Tests
+```env
+ORION_ENV=development
+ORION_ENABLE_DEV_IDP=true
+ORION_TOKEN_SIGNING_KEY=orion-dev-only-signing-key-not-for-production
+```
+
+## Tests and security checks
 
 ```sh
 make test
+make lint
+make audit
 ```
 
-## Synthetic users and tokens
+## Synthetic users (DevIdP only)
 
-The local token endpoint issues bearer tokens for these synthetic accounts:
+`POST /api/token` is available only when `ORION_ENV` is `development` or `test` and `ORION_ENABLE_DEV_IDP=true`.
 
 | Email | Role |
 | --- | --- |
@@ -60,65 +86,49 @@ The local token endpoint issues bearer tokens for these synthetic accounts:
 | `manager@example.test` | manager |
 | `admin@example.test` | administrator |
 
-For example, acquire a token for Alice:
+## API examples
 
 ```sh
 TOKEN=$(curl --silent -X POST http://127.0.0.1:8000/api/token \
   -H 'Content-Type: application/json' \
   -d '{"email":"alice@example.test"}' \
   | python3 -c 'import json,sys; print(json.load(sys.stdin)["access_token"])')
-```
 
-## API examples
-
-Search the documents available to the signed-in user:
-
-```sh
 curl --silent 'http://127.0.0.1:8000/api/documents?q=travel' \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-Ask Orion a question:
+Email send creates a pending approval. Managers approve via:
 
 ```sh
-curl --silent -X POST http://127.0.0.1:8000/api/chat \
-  -H "Authorization: Bearer $TOKEN" \
-  -H 'Content-Type: application/json' \
-  -d '{"message":"What does the travel policy say?"}'
-```
-
-Retrieve a customer record:
-
-```sh
-curl --silent http://127.0.0.1:8000/api/customers/customer-cinder-104 \
-  -H "Authorization: Bearer $TOKEN"
-```
-
-Queue a simulated email in the local outbox:
-
-```sh
-MANAGER_TOKEN=$(curl --silent -X POST http://127.0.0.1:8000/api/token \
-  -H 'Content-Type: application/json' \
-  -d '{"email":"manager@example.test"}' \
-  | python3 -c 'import json,sys; print(json.load(sys.stdin)["access_token"])')
-curl --silent -X POST http://127.0.0.1:8000/api/tools/send-email \
+curl --silent -X POST "http://127.0.0.1:8000/api/approvals/$ACTION_ID" \
   -H "Authorization: Bearer $MANAGER_TOKEN" \
   -H 'Content-Type: application/json' \
-  -d '{"to":"recipient@example.test","subject":"Local update","body":"Synthetic message"}'
+  -d '{"decision":"approve"}'
 ```
 
-The API also provides `GET /health`, `GET /api/documents/{document_id}`, and `GET /api/audit`.
+## Documentation
 
-## Repository structure
+- [Architecture](docs/architecture.md)
+- [Security architecture](docs/security-architecture.md)
+- [Authentication and authorization](docs/authn-authz.md)
+- [Agent and tool security](docs/agent-tools.md)
+- [Model gateway](docs/model-gateway.md)
+- [Prompt versioning](docs/prompts.md)
+- [RAG security](docs/rag-security.md)
+- [Evaluation framework](docs/evaluation.md)
+- [CI/CD security](docs/cicd-security.md)
+- [Docker hardening](docs/docker-hardening.md)
+- [Threat model](docs/threat-model.md)
+- [Security test catalogue](docs/security-test-catalogue.md)
+- [Remediation mapping](docs/remediation-mapping.md)
+- [Production checklist](docs/production-checklist.md)
+- [Residual risks](docs/residual-risks.md)
+- [Implementation summary](docs/implementation-summary.md)
 
-```text
-app/                  FastAPI application, agent, tools, and browser interface
-data/                 Synthetic documents, customer records, and local fixtures
-tests/                Normal API behavior tests
-scripts/              Local development helpers
-.github/workflows/    Continuous integration workflow
-```
+## Important limitations
 
-## Simulation
-
-All users, documents, customer records, credentials, tool results, and email actions are simulated. The application is designed to run locally and does not use an external model or email service.
+- FakeLLM is deterministic and is not a substitute for real-model security validation.
+- Local email delivery is simulated via SQLite outbox only.
+- Fixture fetching is constrained local filesystem access, not SSRF.
+- Enterprise OIDC requires external identity infrastructure before production use.

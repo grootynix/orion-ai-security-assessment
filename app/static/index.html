@@ -198,7 +198,11 @@
           const result = await response.json();
           if (!response.ok) throw new Error(result.detail || "The request could not be completed.");
           answer.textContent = result.answer;
-          status.textContent = "Response ready";
+          if (result.pending_action_id) {
+            status.textContent = `Pending approval · ${result.pending_action_id}`;
+          } else {
+            status.textContent = "Response ready";
+          }
         } catch (error) {
           answer.textContent = error.message;
           status.textContent = "Request could not be completed";

@@ -1,0 +1,4 @@
+{
+  "notice": "Local test JWKS fixture only. Not a production identity provider.",
+  "keys": []
+}

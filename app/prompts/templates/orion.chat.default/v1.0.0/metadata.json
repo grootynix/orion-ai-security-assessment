@@ -1,0 +1,14 @@
+{
+  "prompt_id": "orion.chat.default",
+  "version": "1.0.0",
+  "description": "Default chat system prompt for FakeLLM and future providers",
+  "owner": "orion-security",
+  "status": "approved",
+  "compatible_models": ["fake-llm-v1"],
+  "change_history": [
+    {
+      "version": "1.0.0",
+      "summary": "Initial approved prompt with untrusted-retrieval policy"
+    }
+  ]
+}
